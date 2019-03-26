@@ -9,8 +9,66 @@ and open the template in the editor.
         <title>TODO supply a title</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">        
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>      
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA==" crossorigin=""/>
+        <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg==" crossorigin=""></script>
+        <style>
+            #mapid {  height: 400px;
+                      width: 400px;
+                      float: left;
+            }
+            #grafic {  height: 400px;
+                       width: 400px;
+                       float:right;
+            }
+        </style>
+        <script type="text/javascript" src="datos.js"></script>
     </head>
     <body>
-        <div>TODO write content</div>
+        <!-- modal segon, amb header, body i peu i dos botons un per tancar i l'altre per guardar       -->
+        <!--              un camp per actualitzar la frequencia d'actualitzacio    -->
+        <div class="modal fade" tabindex="-1" role="dialog" id="myModal">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title">Frequencia d'actualització</h4>
+                    </div>
+                    <div class="modal-body">
+                        <label>Introdueix la nova freqüencia d'actualització</label><input id="myModalNovaFrequencia" type="number" max="500" min="1">                        
+                    </div>
+                    <div class="modal-footer">
+                        <button type="buxamptton" class="btn btn-default" data-dismiss="modal">Tancar</button>
+                        <button type="button" class="btn btn-primary" id="myModalGuardar">Actualitza</button>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
+        <!-- Button trigger modal -->
+        <header>  
+            <div> Freqüència d'actualització actual : <strong id="frequencia">3</strong>
+                <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal">Prem per canviar-la</button>
+                <button type="button" class="btn btn-primary btn-lg" id="stop">Stop</button>
+                <button type="button" class="btn btn-primary btn-lg" id="rep">Rep</button>               
+            </div>
+        </header>
+
+        <article>
+            <div id="contingut">TODO write content</div>
+            <!-- per mostrar dades -->
+        </article>
+
+        <article>
+            <div id="mapid" style="width: 600px; height: 400px;"></div>
+            <div id="grafic"></div>          
+        </article>
+
+
+        <article>
+
+        </article>
     </body>
 </html>
