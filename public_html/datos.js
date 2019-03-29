@@ -2,6 +2,7 @@
 var lastUpdateTime = 0;
 var frequenciaActualitzacio = 3;
 var interval = setInterval(consultaDades, frequenciaActualitzacio * 1000);
+var markSeleccionado;
 
 //necesari per google charts
 google.charts.load('current', {'packages': ['corechart']});
@@ -29,11 +30,26 @@ $(document).ready(function () {
     })
 
     //mapa inici
-    mymap = L.map('mapid').setView([41.39795, 2.18004], 13);    
+    mymap = L.map('mapid').setView([41.39795, 2.18004], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(mymap);
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(mymap);
 
+
+    mymap.on('click', function (ev) {
+        var latlng = mymap.mouseEventToLatLng(ev.originalEvent);
+        console.log(latlng.lat + ', ' + latlng.lng);
+        console.log(ev);
+        /* dblclick
+        L.Routing.control({
+            waypoints: [
+                L.latLng(latlng.lat, latlng.lng),
+                L.latLng(41.38242770450345, 2.1327422773084774)
+            ]
+        }).addTo(mymap);
+*/
+
+    });
     //L.marker([51.5, -0.09]).addTo(mymap);
     // mapa fi			
 
@@ -42,7 +58,7 @@ $(document).ready(function () {
 function consultaDades() {
     $.ajax({url: 'https://api.bsmsa.eu/ext/api/Aparcaments/ParkingService/Parkings/v1/ParkingDataSheet/opendata'})
             .done(function (data) {
-                console.log("ok");
+                // console.log("ok");
                 //console.log(data);
                 if (data.updateTime != lastUpdateTime)
                 {
@@ -57,7 +73,7 @@ function consultaDades() {
                 console.log(jqXHR);
             })
             .always(function (x) {
-                console.log("Fí")
+                //  console.log("Fí")
             });
 }
 
@@ -89,13 +105,13 @@ function actualitzaDadesPantalla(data)
 
 Icono = L.icon({
     iconUrl: 'icono.png',
-    iconSize:     [50, 50], // size of the icon
-    popupAnchor:  [0, -25] // point from which the popup should open relative to the iconAnchor
+    iconSize: [50, 50], // size of the icon
+    popupAnchor: [0, -25] // point from which the popup should open relative to the iconAnchor
 });
 Icono2 = L.icon({
     iconUrl: 'icono2.png',
-    iconSize:     [50, 50], // size of the icon
-    popupAnchor:  [0, -25] // point from which the popup should open relative to the iconAnchor
+    iconSize: [50, 50], // size of the icon
+    popupAnchor: [0, -25] // point from which the popup should open relative to the iconAnchor
 });
 function actualitzaMapa(data) {
     if (data !== undefined) {
@@ -103,23 +119,31 @@ function actualitzaMapa(data) {
             if (element.ParkingAccess.Access.length == 2) { //Algunos ParkingAccess tienen 2 entradas
                 element.ParkingAccess.Access.forEach(function (park) {
                     //L.marker([parseFloat(park.Latitude), parseFloat(park.Longitude)]).addTo(mymap);
-                    
-                    L.marker([parseFloat(park.Latitude), parseFloat(park.Longitude)],{icon: Icono2}).addTo(mymap)
-                            .bindPopup('<b>'+element.Name+'<b>')
-                            .openPopup();
+
+                    L.marker([parseFloat(park.Latitude), parseFloat(park.Longitude)], {icon: Icono2}).addTo(mymap)
+                            .bindPopup('<b>' + element.Name + '<b>');
                     //L.marker([51.5, -0.09], {icon: greenIcon}).addTo(map);
-                    
+
                 });
             } else {
-                //L.marker([parseFloat(element.ParkingAccess.Access.Latitude), parseFloat(element.ParkingAccess.Access.Longitude)]).addTo(mymap);
-                      L.marker([parseFloat(element.ParkingAccess.Access.Latitude), parseFloat(element.ParkingAccess.Access.Longitude)],{icon: Icono}).addTo(mymap)
-                            .bindPopup('<b>'+element.Name+'<b>')
-                            .openPopup();
+                //L.marker([parseFloat(element.arkingAccess.Access.Latitude), parseFloat(element.ParkingAccess.Access.Longitude)]).addTo(mymap);
+               markSeleccionado =  L.marker([parseFloat(element.ParkingAccess.Access.Latitude), parseFloat(element.ParkingAccess.Access.Longitude)], {icon: Icono}).on('dblclick', selecciona).addTo(mymap)
+                        .bindPopup('<b>' + element.Name + '<b>');
             }
         });
     }
 }
 
+function selecciona(e) {
+            L.Routing.control({
+            waypoints: [
+                e.target,
+                markSeleccionado
+            ]
+        }).addTo(mymap);
+    console.log(e.target);
+    console.log(markSeleccionado);
+}
 
 
 function actualitzaGrafica(dada) {
@@ -151,3 +175,7 @@ function actualitzaGrafica(dada) {
     var chart = new google.visualization.PieChart(document.getElementById('grafic'));
     chart.draw(data, options);
 }
+function marca() {
+    alert("aa");
+}
+
