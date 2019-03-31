@@ -3,67 +3,61 @@ var lastUpdateTime = 0;
 var frequenciaActualitzacio = 3;
 var interval = setInterval(consultaDades, frequenciaActualitzacio * 1000);
 var markSeleccionado;
+var PosicinDestino;
+var Doble = 0;
+var Indi = 0;
+var Electri = 0;
+var Acces = 0;
 
 //necesari per google charts
-google.charts.load('current', {'packages': ['corechart']});
-google.charts.setOnLoadCallback(actualitzaGrafica);
-
+google.charts.load('current', {'packages': ['bar']});
+google.charts.setOnLoadCallback(actuBarras);
 
 $(document).ready(function () {
-    // actualitza velocitat de refresc
     $("#myModalGuardar").click(function () {
         frequenciaActualitzacio = $("#myModalNovaFrequencia").val();
         $("#frequencia").text(frequenciaActualitzacio);
         $("#myModal").modal("hide");
         clearInterval(interval);
-        interval = setInterval(consultaDades, frequenciaActualitzacio * 1000);  //actualitzem dades cada quan toqui....
+        interval = setInterval(consultaDades, frequenciaActualitzacio * 1000);
     })
 
-    // no volem refrescos
     $("#stop").click(function () {
         clearInterval(interval);
     })
 
-    // volem rebre ara mateix
     $("#rep").click(function () {
         consultaDades();
     })
 
-    //mapa inici
+    $("#quitaRuta").click(function () {
+        PosicinDestino.spliceWaypoints(1, 1);
+    })
+
     mymap = L.map('mapid').setView([41.39795, 2.18004], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(mymap);
 
-
-    mymap.on('click', function (ev) {
-        var latlng = mymap.mouseEventToLatLng(ev.originalEvent);
-        console.log(latlng.lat + ', ' + latlng.lng);
-        console.log(ev);
-        /* dblclick
-        L.Routing.control({
+    //Posicion actual real
+    navigator.geolocation.getCurrentPosition(function (position) {
+        PosicinDestino = L.Routing.control({
             waypoints: [
-                L.latLng(latlng.lat, latlng.lng),
-                L.latLng(41.38242770450345, 2.1327422773084774)
-            ]
+                L.latLng(position.coords.latitude, position.coords.longitude)
+            ],
+            language: 'es',
         }).addTo(mymap);
-*/
-
     });
-    //L.marker([51.5, -0.09]).addTo(mymap);
-    // mapa fi			
-
 })
+
 
 function consultaDades() {
     $.ajax({url: 'https://api.bsmsa.eu/ext/api/Aparcaments/ParkingService/Parkings/v1/ParkingDataSheet/opendata'})
             .done(function (data) {
-                // console.log("ok");
-                //console.log(data);
+                console.log("Ok");
                 if (data.updateTime != lastUpdateTime)
                 {
                     lastUpdateTime = data.updateTime;
-                    //actualitzaDadesPantalla(data);
                     actualitzaMapa(data);
                     //actualitzaGrafica(data);
                 }
@@ -73,35 +67,9 @@ function consultaDades() {
                 console.log(jqXHR);
             })
             .always(function (x) {
-                //  console.log("Fí")
+                console.log("Fin")
             });
 }
-
-
-
-function actualitzaDadesPantalla(data)
-{
-    arrayTipus = [];
-    arrayBicisPerTipus = [];
-    arraySlots = [];
-
-    var linea = "<p>Nova actualització <strong>" + lastUpdateTime + "</strong>";
-
-    //recorro array i vaig posant ja dades
-    for (i = 0; i < data.stations.length; i++)
-    {
-        isNaN(arrayTipus[data.stations[i].type]) ? arrayTipus[data.stations[i].type] = 0 : arrayTipus[data.stations[i].type]++;
-        isNaN(arrayBicisPerTipus[data.stations[i].type]) ? arrayBicisPerTipus[data.stations[i].type] = parseInt(data.stations[i].bikes) : arrayBicisPerTipus[data.stations[i].type] += parseInt(data.stations[i].bikes);
-        isNaN(arraySlots[data.stations[i].type]) ? arraySlots[data.stations[i].type] = parseInt(data.stations[i].slots) : arraySlots[data.stations[i].type] += parseInt(data.stations[i].slots);
-    }
-    for (tipo in arrayTipus)
-    {
-        linea = linea + "<br>Estació tipus:" + tipo + " hi ha <strong>" + arrayTipus[tipo] + "</strong> estacions amb <strong>" + arrayBicisPerTipus[tipo] + "</strong> bicis disponibles i <strong>" + arraySlots[tipo] + "</strong> slots lliures.";
-    }
-    //afegueixo contingut dins html          
-    $("#contingut").html(linea + "</p>");
-}
-
 
 Icono = L.icon({
     iconUrl: 'icono.png',
@@ -113,69 +81,179 @@ Icono2 = L.icon({
     iconSize: [50, 50], // size of the icon
     popupAnchor: [0, -25] // point from which the popup should open relative to the iconAnchor
 });
+
 function actualitzaMapa(data) {
+    Doble = 0;
+    Indi = 0;
+    Electri = 0;
+    Acces = 0;
+
     if (data !== undefined) {
         data.ParkingList.Parking.forEach(function (element) {
+
+            if (element.ElectricCharger = 1) {
+                Electri++;
+            }
+            if (element.HandicapAccess = 1) {
+                Acces++;
+            }
+
+
             if (element.ParkingAccess.Access.length == 2) { //Algunos ParkingAccess tienen 2 entradas
+                Doble++;
                 element.ParkingAccess.Access.forEach(function (park) {
-                    //L.marker([parseFloat(park.Latitude), parseFloat(park.Longitude)]).addTo(mymap);
 
-                    L.marker([parseFloat(park.Latitude), parseFloat(park.Longitude)], {icon: Icono2}).addTo(mymap)
-                            .bindPopup('<b>' + element.Name + '<b>');
-                    //L.marker([51.5, -0.09], {icon: greenIcon}).addTo(map);
+                    L.marker([parseFloat(park.Latitude), parseFloat(park.Longitude)], {icon: Icono2})
+                            .bindPopup('<b>' + element.Name + '<b>')
+                            .on('dblclick', function () {
+                                var carga;
+                                var elevador;
+                                var exterior;
+                                var handicapAccess;
+                                $("#Seleccion").modal();
+                                $('#headMd').text('Name: ' + element.Name);
+                                $('#Address').text('Address: ' + element.Address);
+                                $('#AccessAddress').text('Access address: ' + element.ParkingAccess.Access.AccessAddress);
 
+                                if (element.ElectricCharger = 1) {
+                                    carga = "Si";
+                                } else {
+                                    carga = "No";
+                                }
+                                $('#ElectricCharger').text('ElectricCharger: ' + carga);
+
+                                if (element.Elevator = 1) {
+                                    elevador = "Si";
+                                } else {
+                                    elevador = "No";
+                                }
+                                $('#Elevator').text('Elevator: ' + elevador);
+
+                                if (element.Exterior = 1) {
+                                    exterior = "Si";
+                                } else {
+                                    exterior = "No";
+                                }
+                                $('#Exterior').text('Exterior: ' + exterior);
+
+                                if (element.HandicapAccess = 1) {
+                                    handicapAccess = "Si";
+                                } else {
+                                    handicapAccess = "No";
+                                }
+                                $('#HandicapAccess').text('HandicapAccess: ' + handicapAccess);
+                                $('#MaxHeight').text('MaxHeight: ' + element.MaxHeight);
+                                $('#Open').text('Open: ' + element.Open);
+                                $('#Close').text('Close: ' + element.Close);
+                                $('#PriceMoto').text('PriceMoto : ' + element.ParkingPriceList.Price[0].Amount);
+                                $('#PriceTurisme').text('PriceTurisme : ' + element.ParkingPriceList.Price[1].Amount);
+
+
+                                $("#trRuta").click(function () {
+                                    PosicinDestino.spliceWaypoints(1, 1, L.latLng(parseFloat(park.Latitude), parseFloat(park.Longitude)));
+                                    $('#Seleccion').modal('hide');
+                                })
+                            })
+                            .addTo(mymap);
                 });
             } else {
-                //L.marker([parseFloat(element.arkingAccess.Access.Latitude), parseFloat(element.ParkingAccess.Access.Longitude)]).addTo(mymap);
-               markSeleccionado =  L.marker([parseFloat(element.ParkingAccess.Access.Latitude), parseFloat(element.ParkingAccess.Access.Longitude)], {icon: Icono}).on('dblclick', selecciona).addTo(mymap)
-                        .bindPopup('<b>' + element.Name + '<b>');
+                Indi++;
+                markSeleccionado = L.marker([parseFloat(element.ParkingAccess.Access.Latitude), parseFloat(element.ParkingAccess.Access.Longitude)], {icon: Icono})
+                        .bindPopup('<b>' + element.Name + '<b>')
+                        .on('dblclick', function () {
+                            var carga;
+                            var elevador;
+                            var exterior;
+                            var handicapAccess;
+                            $("#Seleccion").modal();
+                            $('#headMd').text('Name: ' + element.Name);
+                            $('#Address').text('Address: ' + element.Address);
+                            $('#AccessAddress').text('Access address: ' + element.ParkingAccess.Access.AccessAddress);
+
+                            if (element.ElectricCharger = 1) {
+                                carga = "Si";
+                            } else {
+                                carga = "No";
+                            }
+                            $('#ElectricCharger').text('ElectricCharger: ' + carga);
+
+                            if (element.Elevator = 1) {
+                                elevador = "Si";
+                            } else {
+                                elevador = "No";
+                            }
+                            $('#Elevator').text('Elevator: ' + elevador);
+
+                            if (element.Exterior = 1) {
+                                exterior = "Si";
+                            } else {
+                                exterior = "No";
+                            }
+                            $('#Exterior').text('Exterior: ' + exterior);
+
+                            if (element.HandicapAccess = 1) {
+                                handicapAccess = "Si";
+                            } else {
+                                handicapAccess = "No";
+                            }
+                            $('#HandicapAccess').text('HandicapAccess: ' + handicapAccess);
+                            $('#MaxHeight').text('MaxHeight: ' + element.MaxHeight);
+                            $('#Open').text('Open: ' + element.Open);
+                            $('#Close').text('Close: ' + element.Close);
+                            $('#PriceMoto').text('PriceMoto : ' + element.ParkingPriceList.Price[0].Amount);
+                            $('#PriceTurisme').text('PriceTurisme : ' + element.ParkingPriceList.Price[1].Amount);
+
+
+                            $("#trRuta").click(function () {
+                                PosicinDestino.spliceWaypoints(1, 1, L.latLng(parseFloat(element.ParkingAccess.Access.Latitude), parseFloat(element.ParkingAccess.Access.Longitude)));
+                                $('#Seleccion').modal('hide');
+                            })
+                        })
+                        .addTo(mymap);
             }
         });
     }
-}
-
-function selecciona(e) {
-            L.Routing.control({
-            waypoints: [
-                e.target,
-                markSeleccionado
-            ]
-        }).addTo(mymap);
-    console.log(e.target);
-    console.log(markSeleccionado);
+    actualitzaDadesPantalla(data.ParkingList.Parking.length);
+    actuBarras();
 }
 
 
-function actualitzaGrafica(dada) {
-    //https://developers.google.com/chart/interactive/docs/quick_start
-    // Create the data table.
-    var data = new google.visualization.DataTable();
-    data.addColumn('string', 'Tipus');
-    data.addColumn('number', 'Quantitat');
-    if (dada !== undefined) {
-        arrayTipus = [];
-        // compto numero d'estacions
-        for (i = 0; i < dada.stations.length; i++)
-        {
-            isNaN(arrayTipus[dada.stations[i].type]) ? arrayTipus[dada.stations[i].type] = 0 : arrayTipus[dada.stations[i].type]++;
-        }
-        var rows = [];
-        for (tipo in arrayTipus) {
-            rows.push([tipo, arrayTipus[tipo]]);
-        }
-        data.addRows(rows);
-    }
+function actualitzaDadesPantalla(total)
+{
+    var linea = "<p>Nueva actualización <strong>" + lastUpdateTime + "</strong>" +
+            "<br>Total Parkings: <strong>" + total + "</strong>" +
+            "<br>Con doble entrada: <strong>" + Doble + "</strong>" +
+            "<br>Con una sola entrada: <strong>" + Indi + "</strong>" +
+            "<br>Con carga electrica: <strong>" + Electri + "</strong>" +
+            "<br>Con acceso para discapacitados: <strong>" + Acces + "</strong>";
 
-    // Set chart options
-    var options = {'title': 'Quantitat d\'estacions per tipus',
-        'width': 400,
-        'height': 300};
+    $("#contenido").html(linea + "</p>");
+}
 
-    // Instantiate and draw our chart, passing in some options.
-    var chart = new google.visualization.PieChart(document.getElementById('grafic'));
+
+
+$(document).ready(function () {
+    $("#myBtn").click(function () {
+        $("#myModal").modal();
+    });
+});
+
+
+function actuBarras() {
+    var data = new google.visualization.arrayToDataTable([
+        ['Parkings', 'Cantidad'],
+        ['Parkings con doble entrada', Doble],
+        ['Parkings con una sola entrada', Indi],
+        ['Parking con carga electrica', Electri],
+        ['Parking con acceso para discapacitados', Acces]
+    ]);
+
+    var options = {
+        width: 800,
+        bars: 'horizontal',
+    };
+
+    var chart = new google.charts.Bar(document.getElementById('barras'));
     chart.draw(data, options);
 }
-function marca() {
-    alert("aa");
-}
-
+;
